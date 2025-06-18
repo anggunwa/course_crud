@@ -16,7 +16,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $postId = $_POST["id"] ?? "";
 
     if ($title && $body) {
-        // INSERT
+        // UPDATE
         if ($postId) {
             $stmt = $conn->prepare("UPDATE posts SET title = :title, body = :body WHERE id = :id");
             $stmt->bindParam(":title", $title);
@@ -29,6 +29,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $error = "Failed to update the post";
             }
         } else {
+            // INSERT
             $stmt = $conn->prepare("INSERT INTO posts (title, body) VALUES (:title, :body)");
             $stmt->bindParam(":title", $title);
             $stmt->bindParam(":body", $body);
@@ -51,6 +52,19 @@ if (isset($_GET["edit"])) {
     $stmt->bindParam(":id", $id);
     $stmt->execute();
     $postToEdit = $stmt->fetch(PDO::FETCH_ASSOC);
+}
+
+if (isset($_GET["delete"])) {
+    $id = $_GET["delete"];
+
+    $stmt = $conn->prepare("DELETE FROM posts WHERE id = :id");
+    $stmt->bindParam(":id", $id);
+
+    if ($stmt->execute()) {
+        $success = "Post deleted successfully";
+    } else {
+        $error = "Failed to delete post";
+    }
 }
 
 // fetch posts
@@ -92,6 +106,8 @@ $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <strong><?= htmlspecialchars($post["title"]) ?></strong><br>
             <?= nl2br(htmlspecialchars($post["body"])) ?>
             <a href="?edit=<?= $post['id'] ?>">Edit</a>
+            |
+            <a href="?delete=<?= $post['id'] ?>" onclick="return confirm('Are you sure?')">Delete</a>
             <hr>
         </li>
     <?php endforeach; ?>
